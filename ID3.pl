@@ -101,37 +101,61 @@ aumentar(Lista,NuevaLista) :-
 	insert_last(R,VN,NuevaLista).
 
 %Entropia general del Dominio.
-entropyD(Total,Total,Entropia):-
+%entropyD(TotalV,TotalV,Total,Entropia):-
+%	Entropia is (-1*(log(1)/log(2))).
+%
+%
+%entropyD(TotalV,0,_Total,Entropia):-
+%	Entropia is (-1*(log(1)/log(2))).
+%
+%entropyD(TotalV,Positivos,Total,Entropia):-
+%	A is ((abs(TotalV-Positivos))/Total),
+%	B is Positivos/Total,
+%	A \=0, B \=0,
+%	Entropia is (- A * (log(A)/log(2))) - (B*(log(B)/log(2))).
+%
+%entropyD(_TotalV,_Positivos,_Total,0).
+
+entropyD(0,_Negativos,_Total,Entropia):-
 	Entropia is (-1*(log(1)/log(2))).
 
 
-entropyD(0,_Total,Entropia):-
+entropyD(_Positivos,0,_Total,Entropia):-
 	Entropia is (-1*(log(1)/log(2))).
 
-entropyD(Positivos,Total,Entropia):-
-	A is ((abs(Total-Positivos))/Total),
-	B is Positivos/Total,
+entropyD(Positivos,Negativos,Total,Entropia):-
+	A is (Positivos/Total),
+	B is (Negativos/Total),
 	A \=0, B \=0,
 	Entropia is (- A * (log(A)/log(2))) - (B*(log(B)/log(2))).
 
-entropyD(_Positivos,_Total,0).
+entropyD(_Positivos,_Negativos,_Total,0).
+
+
+
+entropyV(TotalV,Positivos,Total,Entropia):-
+	A is (TotalV/Total),
+	Negativos is abs(TotalV - Positivos),
+	entropyD(Positivos,Negativos,Total,Log),
+	Entropia is (- A * Log).
 
 
 %Entropia de un Atributo.
 entropy(SumaAtributo,Entropia):-
-	map(SumaAtributo,nth2(2),ListaT),   %Buscamos las veces que aparecio cada valor para el Attr.
-	foldl(ListaT,0,suma,Total),        %Sumamos las apariciones de cada valor para calcular Total.
-	map(SumaAtributo,nth2(3),ListaP),   %Buscamos las cantidades de true de cada valor.
-	foldl(ListaP,0,entropy_sum(Total),Entropia).
+	map(SumaAtributo,nth2(2),ListaT),                             %Buscamos las veces que aparecio cada valor para el Attr.
+	foldl(ListaT,0,suma,Total),                                   %Sumamos las apariciones de cada valor para calcular Total.
+	map(SumaAtributo,removehead,ListaP),
+	foldl(ListaP,0,entropy_sum(Total),EntropiaT),                  %Calculamos la sumatoria de las entropias de cada valor para el atributo.
+	Entropia is - EntropiaT.
 
 %Sumatoria de la entropia para dominios de valores amplios. Util para FOLDL.
-entropy_sum(Positivo,Total,0,Entropia):-
-	entropyD(Positivo,Total,Entropia).
+entropy_sum([TotalV,Positivo],Total,0,Entropia):-
+	entropyV(TotalV,Positivo,Total,Entropia).
 
-entropy_sum(Positivo,Total,Entropia1,Entropia):-
-	entropyD(Positivo,Total,Entropia2),
+entropy_sum([TotalV,Positivo],Total,Entropia1,Entropia):-
+	entropyV(TotalV,Positivo,Total,Entropia2),
 	suma(Entropia1,Entropia2,Entropia).
-
+%	Entropia is -EntropiaT.
 %Re-escritura de nth para cambiar el orden de los parametros.
 nth2(Lista,Pos,Res) :-
 	nth(Pos,Lista,Res).
