@@ -1,3 +1,3 @@
 #/bin/bash
 
-less $1 | tr -d " \t\r" | tr -d "@" | tr '[:upper:]' '[:lower:]' | sed -e "s/attribute//g" | sed -e "s/data//g" > $1.reducido
+tail -n +2 $1 | sed -e "s/data//g" | tr -d "@" | sed 's/attribute/attribute,/g' | sed 's/{/,[/g' | sed 's/}/]/g' | tr -d " \t\r" | sed '/^\s*$/d' | tr '[:upper:]' '[:lower:]' | sed 's/.*/&./' > $1.reducido
