@@ -5,21 +5,20 @@
 :- use_module(library(lists)).
 :- use_module(library(write)).
 :- use_module(library(sort)).
+%:- use_module(input).
 
-%entrenarArbol(ListaAtributos,ListaEjemplos) :-
-%	inicializarAtributos(ListaAtributos,_Posicion),
-%	analizarEjemplos(ListaEjemplos,_Sumas). 
+%main(Archivo,Arbol):-
+	%analizar_archivo(Archivo,Atrib,_Prueba,Entrenamiento),
+	%entrenarArbol(Atrib,Entrenamiento,Arbol).
 
-
-inicializarAtributos([],0).
-
-inicializarAtributos([HAtr|TAtr],Posicion) :-
-	inicializarAtributos(TAtr,Pos),
-	Pos is Posicion + 1,
-	inicializarAtributo(HAtr,Posicion).
-
-inicializarAtributo(Atributo,Posicion) :-
-	asserta_fact(posicion(Atributo,Posicion)).
+entrenarArbol(ListaAtributos,ListaEjemplos,Arbol) :-
+	analizarEjemplos(ListaEjemplos,Sumas),
+	calcular_entropia(Sumas,LEntropias),
+	list_butlast(ListaAtributos,LAtr),
+	acomodar(LAtr,Sumas,LEntropias,ListaID3),
+	sort(ListaID3,LO),
+	reverse(LO,LOrdenada),
+	algo([],LOrdenada,Arbol).
 
 analizarEjemplos(Ejemplos,EjemplosAnalizados):-
 	transpose(Ejemplos,TEjemplosConResultados),
@@ -28,8 +27,11 @@ analizarEjemplos(Ejemplos,EjemplosAnalizados):-
 	last(TEjemplosConResultados,Resultados),
 	sumar_positivos(TEjemplos,Sumas,Resultados,EjemplosAnalizados).
 
-posicion([],0).
-	
+acomodar([],[],[],[]).
+
+acomodar([[_Pos|Nombre]|LAtr],[HSuma|LSuma],[HEntropia|LEntropia],[[HEntropia,Nombre,HSuma]|Res]):-
+	acomodar(LAtr,LSuma,LEntropia,Res).
+
 sumarListas([],[]).
 
 sumarListas([H|T],[T1|T2]) :-
@@ -216,15 +218,16 @@ suma(X,Y,Res):-
 
 %algoritmo id3
 
-algo([Nombre,CantidadApariciones,FueYes],[],Res):-
-	FueNo is CantidadApariciones - FueYes,
-	((FueNo > FueYes , Res = no) ;(Res = yes)).
+%algo([_Nombre,CantidadApariciones,FueYes],[],Res):-
+%	FueNo is CantidadApariciones - FueYes,
+%	((FueNo > FueYes , Res = no) ;(Res = yes)).
 	
-algo([Nombre,FueYes,FueYes],_,yes).
-algo([Nombre,CantidadApariciones,0],_,no).
+%algo([_Nombre,FueYes,FueYes],_,yes).
+%algo([_Nombre,_CantidadApariciones,0],_,no).
 
 
-algo(T,[Entropy,Nombre,TipoVal|LEntropy],[Nombre|Res]):-
+algo(_T,[H|LEntropy],[Nombre|Res]):-
+	H=[_Entropy,Nombre,TipoVal],
 	nodo(Nombre,TipoVal,[Nombre|Hijos]),
 	map(Hijos,algo(LEntropy),Res).
 

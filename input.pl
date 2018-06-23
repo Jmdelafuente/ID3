@@ -1,13 +1,12 @@
-:- module(Input,_,[]).
+:- module(input,_).
 :- use_module(library(write)).
 :- use_module(library(file_utils)).
-%:- use_module(library(iso_byte_char)).
 :- use_module(library(read)).
 :- use_module(library(lists)).
 :- use_module(library(hiordlib)).
 
 
-main(Archivo,Atrib,Prueba,Entrenamiento) :-
+analizar_archivo(Archivo,Atrib,Prueba,Entrenamiento) :-
     	file_terms(Archivo,R),
 	acomodar_str(R,Res),
 	separar_atributos(Res,1,Atrib,Ejemp),
