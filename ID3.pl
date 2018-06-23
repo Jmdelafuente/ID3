@@ -3,7 +3,7 @@
 :- use_module(library(hiordlib)).
 :- use_module(library(llists)).
 :- use_module(library(lists)).
-%:- use_module(library(write)).
+:- use_module(library(write)).
 :- use_module(library(sort)).
 
 %entrenarArbol(ListaAtributos,ListaEjemplos) :-
@@ -117,27 +117,31 @@ aumentar(Lista,NuevaLista) :-
 %entropyD(_TotalV,_Positivos,_Total,0).
 
 entropyD(0,_Negativos,_Total,Entropia):-
-	Entropia is (-1*(log(1)/log(2))).
+	Entropia is ((1)*(log(1)/log(2))).
 
 
 entropyD(_Positivos,0,_Total,Entropia):-
-	Entropia is (-1*(log(1)/log(2))).
+	Entropia is ((1)*(log(1)/log(2))).
 
 entropyD(Positivos,Negativos,Total,Entropia):-
-	A is (Positivos/Total),
-	B is (Negativos/Total),
+	B is (Positivos/Total),
+	A is (Negativos/Total),
+%	print('a:'),
+%	print(A),
+%	print('b:'),
+%	print(B),
 	A \=0, B \=0,
-	Entropia is (- A * (log(A)/log(2))) - (B*(log(B)/log(2))).
+	Entropia is ((A) * (log(A)/log(2))) + (B*(log(B)/log(2))).
 
-entropyD(_Positivos,_Negativos,_Total,0).
+%entropyD(_Positivos,_Negativos,_Total,0).
 
 
 
 entropyV(TotalV,Positivos,Total,Entropia):-
 	A is (TotalV/Total),
 	Negativos is abs(TotalV - Positivos),
-	entropyD(Positivos,Negativos,Total,Log),
-	Entropia is (- A * Log).
+	entropyD(Positivos,Negativos,TotalV,Log),
+	Entropia is ((A) * Log).
 
 
 %Entropia de un Atributo.
