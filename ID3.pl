@@ -211,3 +211,24 @@ countall(List,X,C) :-
 %Re-escritura de la Suma para mayor legibilidad.
 suma(X,Y,Res):-
 	Res is X + Y.
+
+
+
+%algoritmo id3
+
+algo([Nombre,CantidadApariciones,FueYes],[],Res):-
+	FueNo is CantidadApariciones - FueYes,
+	((FueNo > FueYes , Res = no) ;(Res = yes)).
+	
+algo([Nombre,FueYes,FueYes],_,yes).
+algo([Nombre,CantidadApariciones,0],_,no).
+
+
+algo(T,[Entropy,Nombre,TipoVal|LEntropy],[Nombre|Res]):-
+	nodo(Nombre,TipoVal,[Nombre|Hijos]),
+	map(Hijos,algo(LEntropy),Res).
+
+nodo(Nombre,TipoVal,[Nombre|HijosGenerados]):-
+	map(TipoVal,nodoValor,HijosGenerados).
+
+nodoValor([Nombre,CantidadApariciones,FueYes],[Nombre,[CantidadApariciones,FueYes]]).
