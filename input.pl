@@ -6,6 +6,11 @@
 :- use_module(library(hiordlib)).
 
 
+analizar_ejemplos(Archivo,Atrib,Ejemp):-
+	file_terms(Archivo,R),
+	acomodar_str(R,Res),
+	separar_atributos(Res,1,Atrib,Ejemp).
+
 analizar_archivo(Archivo,Atrib,Prueba,Entrenamiento) :-
     	file_terms(Archivo,R),
 	acomodar_str(R,Res),
