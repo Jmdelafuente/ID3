@@ -7,7 +7,7 @@
 :- use_module(library(write)).
 :- use_module(library(sort)).
 :- use_module(input).
-
+:- use_module(library(prolog_sys)).
 :- use_package(persdb).
 
 persistent_dir(db,'./').
@@ -15,6 +15,20 @@ persistent_dir(db,'./').
 :- persistent(nodo/2,db).
 :- persistent(rama/3,db).
 
+
+main:-
+	Archivo = 'DataSetP.reducido',
+	analizar_archivo(Archivo,Atrib,Prueba,Entrenamiento),
+	entrenarArbol(Atrib,Entrenamiento,_Arbol),
+	list_butlast(Prueba,PruebaSinRes),
+	garbage_collect,
+	clasificar(PruebaSinRes,Resultados),
+	matriz_confusion(Prueba,Resultados).
+
+
+generar_arbol(Archivo):-
+	analizar_ejemplos(Archivo,Atrib,Entrenamiento),
+	entrenarArbol(Atrib,Entrenamiento,_Arbol).
 
 buscar_nodo(A,B):-
 	call(nodo(A,B)).
@@ -25,7 +39,14 @@ buscar_rama(A,Etiqueta,B):-
 buscar_atributo(Posicion,Nombre):-
 	call(atributo(Posicion,Nombre)).
 
-clasificar(Tuplas,Resultado):-
+generar_clasificacion(ArchivoE,ArchivoC):-
+	analizar_ejemplos(ArchivoE,_Atrib,Prueba),
+	analizar_ejemplos(ArchivoC,_Atrib,Clasificar),
+	clasificar(Clasificar,Resultado),
+	matriz_confusion(Prueba,Resultado).
+
+clasificar(TuplasRes,Resultado):-
+	map(TuplasRes,list_butlast,Tuplas),
 	buscar_nodo(raiz,Nombre),
 	map(Tuplas,clasificar_tupla(Nombre),Resultados),
 	agregar_resultados(Tuplas,Resultados,Resultado).
@@ -44,21 +65,16 @@ clasificar_tupla(Tupla,[Nodo],Resultado):-
 	buscar_rama(Nodo,Valor,NuevoNodo),
 	clasificar_tupla(Tupla,NuevoNodo,Resultado).
 
-agregar_resultados([],[],_).
+agregar_resultados([],[],[]).
 
-agregar_resultados([HT|TT],[HR|TR],[TuplaR,Res]):-
-	append(HT,HR,TuplaR),
+agregar_resultados([HT|TT],[HR|TR],[TuplaR|Res]):-
+	insert_last(HT,HR,TuplaR),
 	agregar_resultados(TT,TR,Res).
-
-main(Archivo,Resultados):-
-	analizar_archivo(Archivo,Atrib,Prueba,Entrenamiento),
-	append(Prueba,Entrenamiento,LL),
-	entrenarArbol(Atrib,LL,_Arbol),
-	clasificar(Prueba,Resultados).
 
 entrenarArbol(ListaAtributos,ListaEjemplos,Arbol) :-
 	preparar_atributos(ListaAtributos),
 	list_butlast(ListaAtributos,LA),
+	garbage_collect,
 	algo(ListaEjemplos,LA,Arbol),
 	asserta_fact(nodo(raiz,Arbol)).
 
@@ -74,18 +90,6 @@ preparar_atributos([]).
 preparar_atributos([[Pos,Nombre,_Valores]|T]):-
 	asserta_fact(atributo(Pos,Nombre)),
 	preparar_atributos(T).
-
-%preparar_atributos(LA):-
-%	length(LA,N),
-%	map(LA,prepara_atr(N),_Res).
-%
-%prepara_atr([Pos,Nombre,Valores],Long,[]):-
-%	map(Valores,prepara(Nombre,Pos,Long),_Res).
-%d
-%prepara(Nombre,Valor,Pos,Long,[]):-
-%	length(L,Long),
-%	nth(Pos,L,Valor),
-%	asserta_fact(clasifica(Nombre,L)).
 
 acomodar([],_,[]).
 
@@ -167,22 +171,6 @@ aumentar(Lista,NuevaLista) :-
 	list_butlast(Lista,R),
 	VN is VH + 1,
 	insert_last(R,VN,NuevaLista).
-
-%Entropia general del Dominio.
-%entropyD(TotalV,TotalV,Total,Entropia):-
-%	Entropia is (-1*(log(1)/log(2))).
-%
-%
-%entropyD(TotalV,0,_Total,Entropia):-
-%	Entropia is (-1*(log(1)/log(2))).
-%
-%entropyD(TotalV,Positivos,Total,Entropia):-
-%	A is ((abs(TotalV-Positivos))/Total),
-%	B is Positivos/Total,
-%	A \=0, B \=0,
-%	Entropia is (- A * (log(A)/log(2))) - (B*(log(B)/log(2))).
-%
-%entropyD(_TotalV,_Positivos,_Total,0).
 
 entropyD(0,_Negativos,_Total,Entropia):-
 	Entropia is ((1)*(log(1)/log(2))).
@@ -317,20 +305,6 @@ filtrarD([H|T],NombreA,Ejemplos,[Di|R]):-
 
 %algoritmo id3
 
-% algo([Nombre,[CantidadApariciones,FueYes]],[],[Nombre|Res]):-
-% 	FueNo is CantidadApariciones - FueYes,
-% 	((FueNo > FueYes , Res = no) ;(Res = yes)).
-	
-% algo([Nombre,[FueYes,FueYes]],_,[Nombre|yes]).
-% algo([Nombre,[_CantidadApariciones,0]],_,[Nombre|no]).
-
-
-% algo(T,LEntropy,[NombreT|Res]):-
-% 	T=[NombreT,TipoVal],
-% 	nodo(Nombre,TipoVal,[Nombre|Hijos]),
-% 	map(Hijos,algo(LEntropy),Res).
-
-
 algo(D,[],[T]):-
 	split(D,last(-1),R1,R2),
 	length(R1,L1),
@@ -377,11 +351,25 @@ crear_ramas(Padre,[HH|TH],[HV|TV]):-
 nueva_rama(Nodo1,Etiqueta,Nodo2):-
 	assertz_fact(rama(Nodo1,Etiqueta,Nodo2)).
 
-
-
-
-
-%Predicados necesarios para assert
-%nodo([],[]).
-%
-%atributo([],[]).
+matriz_confusion(Ejemplos,Resultados):-
+	split(Ejemplos,last(1),TrueP,TrueN),
+	split(Resultados,last(1),PosRes,NegRes),
+	%write(TrueP ),
+	%write(TrueN ),
+	%write(PosRes ),
+	%write(NegRes ),
+	intersection(PosRes,TrueP,FalsosPos),
+	intersection(NegRes,TrueN,FalsosNeg),
+	length(FalsosPos,FP),
+	length(FalsosNeg,FN),
+	length(TrueN,TN),
+	length(TrueP,TP),
+	display_string("-------------MATRIZ DE CONFUSION----------\n"),
+	%display_string("------------------------------------------\n"),
+	display_string("TP="),print(TP),display_string("            FN="),print(FN),display_string("\n"),
+	display_string("TN="),print(TN),display_string("            FP="),print(FP),display_string("\n"),
+	display_string("------------------------------------------\n"),
+	Precision is (TP/(TP+FP)),
+	Recall is (TP/(TP+FN)),
+	display_string("Precision: "),print(Precision),display_string("\n"),
+	display_string("Recall:    "),print(Recall),display_string("\n").
