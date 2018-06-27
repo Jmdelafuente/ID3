@@ -1,4 +1,3 @@
-
 %:- encoding(utf8).
 :- module(id3v2,_,_).
 :- use_module(library(hiordlib)).
@@ -39,11 +38,10 @@ buscar_rama(A,Etiqueta,B):-
 buscar_atributo(Posicion,Nombre):-
 	call(atributo(Posicion,Nombre)).
 
-generar_clasificacion(ArchivoE,ArchivoC):-
-	analizar_ejemplos(ArchivoE,_Atrib,Prueba),
+generar_clasificacion(ArchivoC):-
 	analizar_ejemplos(ArchivoC,_Atrib,Clasificar),
 	clasificar(Clasificar,Resultado),
-	matriz_confusion(Prueba,Resultado).
+	matriz_confusion(Clasificar,Resultado).
 
 clasificar(TuplasRes,Resultado):-
 	map(TuplasRes,list_butlast,Tuplas),
@@ -76,7 +74,7 @@ entrenarArbol(ListaAtributos,ListaEjemplos,Arbol) :-
 	list_butlast(ListaAtributos,LA),
 	garbage_collect,
 	algo(ListaEjemplos,LA,Arbol),
-	asserta_fact(nodo(raiz,Arbol)).
+	assertz_fact(nodo(raiz,Arbol)).
 
 analizarEjemplos(Ejemplos,EjemplosAnalizados):-
 	transpose(Ejemplos,TEjemplosConResultados),
@@ -278,8 +276,8 @@ suma(X,Y,Res):-
 
 %Ordenar de Mayor a Menor
 ordenar(L,LO):-
-	sort(L,L2),
-	reverse(L2,LO).
+	sort(L,LO).
+	%reverse(L2,LO).
 
 %Implementacion de Filter
 filtro([],_N,[]).  
@@ -355,11 +353,14 @@ matriz_confusion(Ejemplos,Resultados):-
 	split(Ejemplos,last(1),TrueP,TrueN),
 	split(Resultados,last(1),PosRes,NegRes),
 	%write(TrueP ),
-	%write(TrueN ),
+	%display_string("\n"),
+	%write(Resultados ),
+	%display_string("\n"),
 	%write(PosRes ),
+	%display_string("\n"),
 	%write(NegRes ),
-	intersection(PosRes,TrueP,FalsosPos),
-	intersection(NegRes,TrueN,FalsosNeg),
+	difference(PosRes,TrueP,FalsosPos),
+	difference(NegRes,TrueN,FalsosNeg),
 	length(FalsosPos,FP),
 	length(FalsosNeg,FN),
 	length(TrueN,TN),
